@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>跨局域网PDF查看器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #4361ee;
@@ -12,6 +13,7 @@
             --dark: #212529;
             --success: #4cc9f0;
             --danger: #f72585;
+            --warning: #ffc107;
         }
 
         * {
@@ -23,8 +25,9 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f0f2f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
             color: var(--dark);
+            min-height: 100vh;
         }
 
         .container {
@@ -39,33 +42,63 @@
             padding: 2rem 0;
             text-align: center;
             border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 18px rgba(67, 97, 238, 0.25);
             margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: -80px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         h1 {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
         }
 
         .subtitle {
             font-size: 1.1rem;
             opacity: 0.9;
             margin-bottom: 1rem;
+            position: relative;
+            z-index: 2;
         }
 
         .card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            padding: 25px;
             margin-bottom: 25px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
         }
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.12);
         }
 
         .section-title {
@@ -73,7 +106,14 @@
             margin-bottom: 20px;
             color: var(--primary);
             border-bottom: 2px solid var(--primary);
-            padding-bottom: 10px;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 1.3rem;
         }
 
         .pdf-list {
@@ -84,8 +124,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 18px;
             border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+            border-radius: 8px;
+        }
+
+        .pdf-item:hover {
+            background-color: rgba(67, 97, 238, 0.05);
         }
 
         .pdf-item:last-child {
@@ -94,42 +140,63 @@
 
         .pdf-info {
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .pdf-icon {
+            color: var(--danger);
+            font-size: 1.8rem;
+        }
+
+        .pdf-details {
+            display: flex;
+            flex-direction: column;
         }
 
         .pdf-name {
             font-weight: 600;
             font-size: 1.1rem;
             color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .pdf-time {
             font-size: 0.9rem;
             color: #6c757d;
+            margin-top: 4px;
         }
 
         .btn {
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 18px;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-view {
-            background-color: var(--primary);
+            background: linear-gradient(to right, var(--primary), var(--secondary));
             color: white;
             margin-right: 8px;
         }
 
         .btn-download {
-            background-color: var(--success);
+            background: linear-gradient(to right, var(--success), #2a9dcc);
             color: white;
         }
 
         .btn:hover {
             opacity: 0.9;
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         #viewer-container {
@@ -141,8 +208,9 @@
             width: 100%;
             height: 80vh;
             border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 8px;
             background-color: #fafafa;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .viewer-header {
@@ -153,7 +221,7 @@
         }
 
         #back-btn {
-            background-color: #6c757d;
+            background: linear-gradient(to right, #6c757d, #5a6268);
             color: white;
         }
 
@@ -163,7 +231,7 @@
             height: 20px;
             border: 3px solid rgba(255,255,255,.3);
             border-radius: 50%;
-            border-top-color: #fff;
+            border-top-color: var(--primary);
             animation: spin 1s ease-in-out infinite;
             margin-right: 10px;
         }
@@ -178,26 +246,94 @@
             padding: 15px;
             margin: 20px 0;
             border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .warning {
+            background-color: #fff8e6;
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .auth-section {
-            background-color: #e8f4fc;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.08) 0%, rgba(63, 55, 201, 0.08) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(67, 97, 238, 0.15);
         }
 
         input {
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
         }
 
         .flex-row {
             display: flex;
+            gap: 15px;
+        }
+
+        .security-info {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .security-info h3 {
+            color: var(--warning);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
             gap: 10px;
+        }
+
+        .security-info ul {
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+
+        .security-info li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #28a745;
+        }
+
+        .status-dot.warning {
+            background-color: var(--warning);
         }
 
         @media (max-width: 768px) {
@@ -211,35 +347,93 @@
             }
 
             .pdf-actions {
-                margin-top: 10px;
-                align-self: flex-end;
+                margin-top: 15px;
+                align-self: stretch;
+                display: flex;
             }
+
+            .pdf-actions .btn {
+                flex: 1;
+                text-align: center;
+            }
+
+            header {
+                padding: 1.5rem 0;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+
+        .pdf-thumbnail {
+            width: 60px;
+            height: 80px;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e4e7f1 100%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
     </style>
 </head>
 <body>
 <div class="container">
     <header>
-        <h1>跨局域网PDF查看器</h1>
+        <h1><i class="fas fa-file-pdf"></i> 跨局域网PDF查看器</h1>
         <p class="subtitle">安全访问和查看不同局域网中的PDF文档</p>
     </header>
 
+    <div class="security-info">
+        <h3><i class="fas fa-shield-alt"></i> 安全注意事项</h3>
+        <p>此服务通过 ngrok.com 提供，请确保您信任发送此链接给您的人。</p>
+        <ul>
+            <li>避免在此网站上披露个人或财务信息（如密码、电话号码或信用卡）</li>
+            <li>仅访问您信任的链接和网站</li>
+            <li>确保您的设备安装了最新的安全更新</li>
+            <li>如果您是开发者，请考虑升级到付费ngrok账户以获得更安全的环境</li>
+        </ul>
+        <div class="status-indicator">
+            <div class="status-dot warning"></div>
+            <span>当前连接使用免费ngrok服务，安全性有限</span>
+        </div>
+    </div>
+
     <div class="auth-section">
-        <h3>后端配置</h3>
+        <h3><i class="fas fa-server"></i> 后端配置</h3>
         <div class="flex-row">
             <div style="flex: 1">
                 <label for="api-url">后端API地址:</label>
-                <input type="text" id="api-url" placeholder="http://your-public-ip:5000" value="http://192.168.56.1:5000">
+                <input type="text" id="api-url" placeholder="https://your-public-ip:5000" value="https://8777-110-249-143-30.ngrok-free.app">
             </div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>连接状态：已配置ngrok安全请求头</span>
         </div>
     </div>
 
     <div class="card">
-        <h2 class="section-title">PDF文件列表</h2>
-        <div id="loading-indicator" style="display: none;">
-            <div class="loader"></div> 加载中...
+        <h2 class="section-title"><i class="fas fa-list"></i> PDF文件列表</h2>
+        <div id="loading-indicator" style="display: none; padding: 15px; text-align: center;">
+            <div class="loader"></div> <span>加载中，请稍候...</span>
         </div>
         <div id="error-container" class="error" style="display: none;"></div>
+        <div id="warning-container" class="warning" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>您正在使用免费ngrok服务，请勿传输敏感文档</span>
+        </div>
         <ul id="pdf-list" class="pdf-list">
             <!-- PDF列表将通过JavaScript动态填充 -->
         </ul>
@@ -247,11 +441,15 @@
 
     <div id="viewer-container" class="card">
         <div class="viewer-header">
-            <h2 class="section-title">PDF预览</h2>
-            <button id="back-btn" class="btn">返回列表</button>
+            <h2 class="section-title"><i class="fas fa-file-pdf"></i> PDF预览</h2>
+            <button id="back-btn" class="btn"><i class="fas fa-arrow-left"></i> 返回列表</button>
         </div>
-        <iframe id="pdf-viewer" src=""></iframe>
+        <iframe id="pdf-viewer" src="" title="PDF文档查看器"></iframe>
     </div>
+
+    <footer>
+        <p>Powered by ngrok | 跨局域网PDF查看器 v1.0</p>
+    </footer>
 </div>
 
 <script>
@@ -261,11 +459,15 @@
     const pdfViewer = document.getElementById('pdf-viewer');
     const backButton = document.getElementById('back-btn');
     const errorContainer = document.getElementById('error-container');
+    const warningContainer = document.getElementById('warning-container');
     const loadingIndicator = document.getElementById('loading-indicator');
     const apiUrlInput = document.getElementById('api-url');
 
     // 当前选中的PDF ID
     let currentPdfId = null;
+
+    // 显示安全警告
+    warningContainer.style.display = 'block';
 
     // 获取API基础URL
     function getApiBaseUrl() {
@@ -281,11 +483,18 @@
     async function fetchPdfList() {
         try {
             errorContainer.style.display = 'none';
+            warningContainer.style.display = 'block';
             loadingIndicator.style.display = 'block';
             pdfListElement.innerHTML = '';
 
             const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}api/pdfs`);
+
+            // 添加ngrok安全请求头以跳过警告页面
+            const response = await fetch(`${baseUrl}api/pdfs`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
 
             if (!response.ok) {
                 throw new Error(`请求失败: ${response.status} ${response.statusText}`);
@@ -326,28 +535,44 @@
             const pdfInfo = document.createElement('div');
             pdfInfo.className = 'pdf-info';
 
+            const pdfThumbnail = document.createElement('div');
+            pdfThumbnail.className = 'pdf-thumbnail';
+            pdfThumbnail.innerHTML = '<i class="fas fa-file-pdf"></i>';
+
+            const pdfDetails = document.createElement('div');
+            pdfDetails.className = 'pdf-details';
+
             const pdfName = document.createElement('div');
             pdfName.className = 'pdf-name';
-            pdfName.textContent = pdf.file_name;
+
+            const fileIcon = document.createElement('i');
+            fileIcon.className = 'far fa-file-pdf';
+            pdfName.appendChild(fileIcon);
+
+            const nameText = document.createTextNode(pdf.file_name);
+            pdfName.appendChild(nameText);
 
             const pdfTime = document.createElement('div');
             pdfTime.className = 'pdf-time';
-            pdfTime.textContent = `上传时间: ${new Date(pdf.upload_time).toLocaleString()}`;
+            pdfTime.innerHTML = `<i class="far fa-clock"></i> 上传时间: ${new Date(pdf.upload_time).toLocaleString()}`;
 
-            pdfInfo.appendChild(pdfName);
-            pdfInfo.appendChild(pdfTime);
+            pdfDetails.appendChild(pdfName);
+            pdfDetails.appendChild(pdfTime);
+
+            pdfInfo.appendChild(pdfThumbnail);
+            pdfInfo.appendChild(pdfDetails);
 
             const pdfActions = document.createElement('div');
             pdfActions.className = 'pdf-actions';
 
             const viewButton = document.createElement('button');
             viewButton.className = 'btn btn-view';
-            viewButton.textContent = '查看';
+            viewButton.innerHTML = '<i class="fas fa-eye"></i> 查看';
             viewButton.onclick = () => viewPdf(pdf.id, pdf.file_name);
 
             const downloadButton = document.createElement('button');
             downloadButton.className = 'btn btn-download';
-            downloadButton.textContent = '下载';
+            downloadButton.innerHTML = '<i class="fas fa-download"></i> 下载';
             downloadButton.onclick = () => downloadPdf(pdf.id, pdf.file_name);
 
             pdfActions.appendChild(viewButton);
@@ -364,14 +589,21 @@
     function viewPdf(pdfId, fileName) {
         currentPdfId = pdfId;
         const baseUrl = getApiBaseUrl();
-        pdfViewer.src = `${baseUrl}api/pdf/${pdfId}`;
+
+        // 添加ngrok安全请求头
+        pdfViewer.src = `${baseUrl}api/pdf/${pdfId}?ngrok-skip-browser-warning=true`;
         viewerContainer.style.display = 'block';
+
+        // 滚动到查看器位置
+        viewerContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
     // 下载PDF
     function downloadPdf(pdfId, fileName) {
         const baseUrl = getApiBaseUrl();
-        const downloadUrl = `${baseUrl}api/pdf/${pdfId}?download=true`;
+
+        // 添加ngrok安全请求头
+        const downloadUrl = `${baseUrl}api/pdf/${pdfId}?download=true&ngrok-skip-browser-warning=true`;
 
         const a = document.createElement('a');
         a.href = downloadUrl;
@@ -386,11 +618,14 @@
         viewerContainer.style.display = 'none';
         pdfViewer.src = '';
         currentPdfId = null;
+
+        // 滚动到顶部
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // 显示错误信息
     function showError(message) {
-        errorContainer.textContent = message;
+        errorContainer.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
         errorContainer.style.display = 'block';
     }
 
@@ -399,7 +634,22 @@
     apiUrlInput.addEventListener('change', fetchPdfList);
 
     // 初始化
-    window.onload = fetchPdfList;
+    window.onload = function() {
+        fetchPdfList();
+
+        // 显示ngrok警告信息
+        const ngrokWarning = document.createElement('div');
+        ngrokWarning.className = 'warning';
+        ngrokWarning.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>ngrok安全提醒</strong>
+                <p>此网站通过ngrok免费服务提供。请勿在此网站上披露敏感个人信息。</p>
+                <p>仅访问您信任的链接。</p>
+            </div>
+        `;
+        document.querySelector('.container').insertBefore(ngrokWarning, document.querySelector('.card'));
+    };
 </script>
 </body>
 </html>
